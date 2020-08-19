@@ -1,0 +1,106 @@
+FROM centos:7.6.1810
+ENV PHP_VERSION 7.3.12
+ENV SWOOLE_VERSION 4.4.17
+ENV PHP_REDIS_VERSION 5.1.1
+ENV PATH "/usr/local/php/bin:/usr/local/php/sbin:$PATH"
+RUN yum -y update \
+    && yum install -y \
+    autoconf \
+    automake \
+    libtool \
+    make \
+    gcc \
+    gcc-c++ \
+    libmcrypt-devel \
+    libxml2-devel \
+    gmp-devel \
+    unzip \
+    git \
+    wget \
+    openssl-devel \
+    libcurl-devel \
+    && rpm -ivh http://packages.psychotic.ninja/7/plus/x86_64/RPMS//libzip-0.11.2-6.el7.psychotic.x86_64.rpm \
+    && rpm -ivh http://packages.psychotic.ninja/7/plus/x86_64/RPMS//libzip-devel-0.11.2-6.el7.psychotic.x86_64.rpm
+    # php
+	mkdir -p /usr/local/etc/php \
+    && mkdir -p /usr/local/php \
+    && mkdir -p php \
+    && wget http://php.net/get/php-$PHP_VERSION.tar.gz/from/this/mirror -O php.tar.gz \
+    && tar -xf php.tar.gz -C php --strip-components=1 \
+    && rm -r php.tar.gz \
+    && ( \
+    cd php \
+    && ./configure --prefix=/usr/local/php --with-config-file-path=/usr/local/etc/php \
+    --enable-cli --disable-fpm --disable-cgi --enable-inline-optimization --with-zlib \
+    --with-curl --enable-mbregex --enable-mbstring --enable-pcntl --enable-sockets \
+    --enable-json --with-pdo-mysql --enable-ipv6 --without-pear --enable-opcache --with-openssl \
+    --with-freetype-dir --with-jpeg-dir --with-png-dir --without-sqlite3 \
+    --without-pdo-sqlite --enable-simplexml --enable-xml --disable-xmlreader \
+    --disable-xmlwriter --enable-libxml --disable-dom --enable-zip --enable-bcmath --with-gmp --with-pear\
+    && make \
+    && make install \
+    && mv php.ini-production /usr/local/etc/php/php.ini \
+    ) \
+    && echo 'export PATH=/usr/local/php/bin:/usr/local/php/sbin:$PATH' >> /etc/profile \
+    && rm -r php
+	# redis
+    wget https://github.com/phpredis/phpredis/archive/$PHP_REDIS_VERSION.tar.gz -O phpredis.tar.gz \
+    && mkdir -p phpredis \
+    && tar -xf phpredis.tar.gz -C phpredis --strip-components=1 \
+    && rm phpredis.tar.gz \
+    && ( \
+    cd phpredis \
+    && phpize \
+    && ./configure \
+    && make \
+    && make install \
+    ) \
+    && echo "extension=redis.so" >> /usr/local/etc/php/php.ini \
+    && rm -r phpredis \
+    # donkeyid
+	&& wget https://github.com/osgochina/donkeyid/archive/donkeyid-1.0.tar.gz -O donkeyid.tar.gz \
+    && mkdir -p donkeyid \
+    && tar -xf donkeyid.tar.gz -C donkeyid --strip-components=1 \
+    && rm donkeyid.tar.gz \
+    && ( \
+    cd donkeyid/donkeyid \
+    && phpize \
+    && ./configure \
+    && make \
+    && make install \
+    ) \
+    && echo "extension=donkeyid.so" >> /usr/local/etc/php/php.ini \
+    && rm -r donkeyid \
+    # swoole
+	&& wget https://github.com/swoole/swoole-src/archive/v$SWOOLE_VERSION.tar.gz -O swoole.tar.gz \
+    && mkdir -p swoole \
+    && tar -xf swoole.tar.gz -C swoole --strip-components=1 \
+    && rm swoole.tar.gz \
+    && ( \
+    cd swoole \
+    && phpize \
+    && ./configure --enable-mysqlnd --enable-openssl\
+    && make -j$(nproc) \
+    && make install \
+    ) \
+    && echo "extension=swoole.so" >> /usr/local/etc/php/php.ini \
+    && rm -r swoole
+	# mongodb
+	wget https://github.com/mongodb/mongo-php-driver-legacy/archive/1.6.16.tar.gz -O phpmongodb.tar.gz \
+    && mkdir -p phpmongodb \
+    && tar -xf phpmongodb.tar.gz -C phpmongodb --strip-components=1 \
+    && rm phpmongodb.tar.gz \
+    && ( \
+    cd phpmongodb \
+    && phpize \
+    && ./configure \
+    && make \
+    && make install \
+    ) \
+    && echo "extension=mongo.so" >> /usr/local/etc/php/php.ini \
+    && rm -r phpmongodb \
+    # composer
+	php -r "copy('https://install.phpcomposer.com/installer', 'composer-setup.php');" \
+    && php composer-setup.php \
+    && php -r "unlink('composer-setup.php');" \
+    && mv composer.phar /usr/local/bin/composer
