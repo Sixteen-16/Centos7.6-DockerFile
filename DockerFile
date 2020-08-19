@@ -20,7 +20,7 @@ RUN yum -y update \
     openssl-devel \
     libcurl-devel \
     && rpm -ivh http://packages.psychotic.ninja/7/plus/x86_64/RPMS//libzip-0.11.2-6.el7.psychotic.x86_64.rpm \
-    && rpm -ivh http://packages.psychotic.ninja/7/plus/x86_64/RPMS//libzip-devel-0.11.2-6.el7.psychotic.x86_64.rpm
+    && rpm -ivh http://packages.psychotic.ninja/7/plus/x86_64/RPMS//libzip-devel-0.11.2-6.el7.psychotic.x86_64.rpm \
     # php
 	mkdir -p /usr/local/etc/php \
     && mkdir -p /usr/local/php \
@@ -42,7 +42,7 @@ RUN yum -y update \
     && mv php.ini-production /usr/local/etc/php/php.ini \
     ) \
     && echo 'export PATH=/usr/local/php/bin:/usr/local/php/sbin:$PATH' >> /etc/profile \
-    && rm -r php
+    && rm -r php \
 	# redis
     wget https://github.com/phpredis/phpredis/archive/$PHP_REDIS_VERSION.tar.gz -O phpredis.tar.gz \
     && mkdir -p phpredis \
@@ -84,7 +84,7 @@ RUN yum -y update \
     && make install \
     ) \
     && echo "extension=swoole.so" >> /usr/local/etc/php/php.ini \
-    && rm -r swoole
+    && rm -r swoole \
 	# mongodb
 	wget https://github.com/mongodb/mongo-php-driver-legacy/archive/1.6.16.tar.gz -O phpmongodb.tar.gz \
     && mkdir -p phpmongodb \
